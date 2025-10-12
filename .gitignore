@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.env
+
+# VSCode / IDE
+.vscode/
+.idea/
+
+# Flask / logs
+instance/
+*.log
+
+# Node / Frontend
+node_modules/
+dist/
+
+# Sistema
+.DS_Store
+Thumbs.db

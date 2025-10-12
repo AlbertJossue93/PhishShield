@@ -1,0 +1,29 @@
+{
+  "name": "Phishield",
+  "description": "Detector de URLs Maliciosas", 
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Verificar URL com Phishield",
+    "default_icon": {
+      "16": "icons/dragon.png",
+      "32": "icons/dragon.png", 
+      "48": "icons/dragon.png",
+      "128": "icons/dragon.png"
+    }
+  },
+  "icons": {
+    "16": "icons/dragon.png",
+    "32": "icons/dragon.png",
+    "48": "icons/dragon.png",
+    "128": "icons/dragon.png"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5000/api/check"
+  ]
+}
