@@ -1,17 +1,19 @@
 from urllib.parse import urlparse
+import tldextract
 from app.analyzer import URL_Analyzer # Assumindo que URL_Analyzer está no mesmo pacote
 
 class AdvancedURLAnalyzer(URL_Analyzer):
     def __init__(self, url):
         super().__init__(url)  # reaproveita construtor da classe base
-        # Inicializa o atributo que será usado e retornado, evitando AttributeError
+        # Inicializa o atributo que será usado e retornado,  ASSIM evitando AttributeError
         self.subdomain_count = 0 
 
     def check_subdomains(self):
         
         try:
             parsed_url = urlparse(self.url)
-            domains_parts = parsed_url.hostname.split('.') 
+            domains_parts = parsed_url.hostname.split('.')
+            extracted = tldextract.extract(self.url)
 
             # CORREÇÃO: Usando consistentemente self.subdomain_count
             # Ex: www.google.com -> 3 partes. O domínio base e TLD são 2.
@@ -21,8 +23,7 @@ class AdvancedURLAnalyzer(URL_Analyzer):
             if self.subdomain_count > 2:
                 self.score +=2
                 self.feedback.append("Muitos subdomínios (possível ofuscação).")
-                
-            # Usando consistentemente self.subdomain_count
+    
             elif self.subdomain_count > 0: # Corrigindo para > 0, pois > 1 já é pego acima.
                 self.score +=1
                 self.feedback.append("Subdomínios presentes.")
@@ -34,7 +35,7 @@ class AdvancedURLAnalyzer(URL_Analyzer):
 
 
     def analyze(self):
-        # CORREÇÃO: Adicionando parênteses para chamar o método da classe pai
+        #Adicionando parênteses para chamar o método da classe pai
         super().analyze() 
         
         self.check_subdomains() 
