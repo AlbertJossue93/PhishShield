@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.analyzer import URL_Analyzer
+from app.advanced_analyzer import AdvancedURLAnalyzer
 
 bp = Blueprint("routes", __name__)
 
@@ -17,10 +17,11 @@ def check():
         return jsonify({"error": "URL é obrigatória"}), 400
     
     try:
-        analyzer = URL_Analyzer(url)
+        analyzer = AdvancedURLAnalyzer(url)
         resultado = analyzer.analyze()
         
         return jsonify(resultado)
         
     except Exception as e:
-        return jsonify({"error": f"Erro ao analisar URL: {str(e)}"}), 500
+        # CORREÇÃO: Removendo o 'e' extra do retorno 500
+        return jsonify({"error": f"Erro ao analisar URL: {str(e)}"}), 500 

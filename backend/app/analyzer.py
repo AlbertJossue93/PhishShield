@@ -11,6 +11,8 @@ class URL_Analyzer:
         else:
             self.feedback.append("URL usa HTTPS corretamente")
 
+   
+   
     def check_length(self):
         if len(self.url) > 100:
             self.score += 2
@@ -39,6 +41,7 @@ class URL_Analyzer:
         self.check_length() 
         self.check_hifen()
         
+
         # Estrutura compatível com o popup.js
         return {
             "resultado": {
