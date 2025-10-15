@@ -15,20 +15,35 @@ class AdvancedURLAnalyzer(URL_Analyzer):
             domains_parts = parsed_url.hostname.split('.')
             extracted = tldextract.extract(self.url)
 
-            # CORREÇÃO: Usando consistentemente self.subdomain_count
-            # Ex: www.google.com -> 3 partes. O domínio base e TLD são 2.
-            # O número de subdomínios é a contagem de partes - 2 (base + tld).
-            self.subdomain_count = len(domains_parts) - 2 
+            common_subdomains = [
+    'www', 'mail', 'ftp', 'blog', 'shop', 'store', 
+    'support', 'ajuda', 'help',      # Suporte e Ajuda
+    'api', 'cdn', 'dev', 'test',     # Técnico e Infraestrutura
+    'm', 'mobile',                   # Móvel
+    'app', 'panel', 'painel', 'admin', # Aplicações e Painéis
+    'secure', 'sso',                 # Segurança e Login Único
+    'br', 'us', 'uk', 'es', 'fr'     # Localização (códigos de país comuns)
+                                  ]
+                    
+            subdomains = extracted.subdomain.split('.') if extracted.subdomain else []
+            
+            subdomains_suspeitos = [sub for sub in subdomains if sub not in common_subdomains]
 
+            self.subdomain_count = len(subdomains_suspeitos)
+            total_subdomains = len(subdomains)
+            
             if self.subdomain_count > 2:
                 self.score +=2
                 self.feedback.append("Muitos subdomínios (possível ofuscação).")
     
-            elif self.subdomain_count > 0: # Corrigindo para > 0, pois > 1 já é pego acima.
+            elif self.subdomain_count == 2: 
                 self.score +=1
-                self.feedback.append("Subdomínios presentes.")
+                self.feedback.append(f"Dois subdomínios suspeitos ({', '.join(subdomains_suspeitos)})")
+            elif self.subdomain_count == 1:
+                self.feedback.append("Um subdominio presente")
             else:
-                self.feedback.append("Número normal de subdomínios.")
+                if total_subdomains > 0:
+                    self.feedback.append(f"Apenas subdominios comuns({', '.join(subdomains)})")
         
         except Exception as e:
             self.feedback.append(f"Erro ao analisar os subdomínios: {str(e)}")
@@ -46,7 +61,7 @@ class AdvancedURLAnalyzer(URL_Analyzer):
                 "status": self.get_status(),
                 "score": self.score,
                 "feedback": self.feedback,
-                "subdomain_count": self.subdomain_count 
+                "subdominio ": self.subdomain_count 
             },
             "url_analisada": self.url
         }
