@@ -15,21 +15,27 @@ chrome.storage.local.get(['theme'], function(result) {
     document.documentElement.setAttribute('data-theme', savedTheme);
 });
 
-// ⏳ Função para mostrar "carregando" no botão
-function setButtonLoading(loading) {
-    const button = document.getElementById('analyze-btn');
-    const buttonText = button.querySelector('.button-text');
 
-    if (loading) {
-        button.classList.add('button-loading');
-        buttonText.textContent = 'Analisando...';
-        button.disabled = true;
-    } else {
-        button.classList.remove('button-loading');
-        buttonText.textContent = 'Analisar URL';
-        button.disabled = false;
+// Função para validar URL
+function validarUrl(url) {
+    try {
+        new URL(url); // Verifica se é uma URL válida
+        return /^https?:\/\//i.test(url); // Aceita apenas http ou https
+    } catch {
+        return false;
     }
 }
+
+// Função para sanitizar strings contra XSS
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 
 // Função para determinar o ícone do status
 function getStatusIcon(status) {
@@ -39,14 +45,99 @@ function getStatusIcon(status) {
     if (statusLower.includes('perigoso')) return '✗';
     return '?';
 }
+// Função para determinar a classe CSS do status
+function getStatusClass(status) {
+    const s = status.toLowerCase();
+    if (s.includes('seguro')) return 'status-seguro';
+    if (s.includes('suspeito')) return 'status-suspeito';
+    if (s.includes('perigoso')) return 'status-perigoso';
+    return 'status-desconhecido';
+}
+// Função para mostrar erros
+function showError(resultSection, resultDiv, message) {
+    resultSection.style.display = "block";
+    resultDiv.innerHTML = `
+        <div class="status-header">
+            <div class="status-icon status-perigoso">!</div>
+            <div class="status-text">Erro</div>
+        </div>
+        <p style="color: var(--error-color, #d32f2f); margin: 0;">${escapeHtml(message)}</p>
+    `;
+}
 
-//  Função para validar URL
-function validarUrl(url) {
-    try {
-        const parsed = new URL(url);
-        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-    } catch {
-        return false;
+// Função para mostrar resultados
+function showResult(resultSection, resultDiv, data) {
+    let status, score, feedback, urlAnalisada, timestamp;
+
+    // Estrutura da resposta
+    if (data.resultado) {
+        status = data.resultado.status || "Desconhecido";
+        score = data.resultado.score ?? "N/A";
+        feedback = data.resultado.feedback || ["Sem detalhes"];
+        subdomainCount = data.resultado.subdomain_count ?? 0;
+        urlAnalisada = data.url_analisada || "N/A";
+        timestamp = data.timestamp || new Date().toISOString();
+    } else {
+        score = data.score ?? 0;
+        status = score === 0 ? "Seguro" : score <= 2 ? "Suspeito" : "Perigoso";
+        feedback = data.feedback || ["Sem detalhes"];
+        subdomainCount = data.resultado.subdomain_count ?? 0;
+        urlAnalisada = data.url_analisada || "N/A";
+        timestamp = data.timestamp || new Date().toISOString();
+    }
+
+    const statusClass = getStatusClass(status);
+
+    resultSection.style.display = "block";
+    resultDiv.innerHTML = `
+        <div class="result-item">
+            <span class="result-label">URL Analisada:</span>
+            <span class="result-value">${escapeHtml(urlAnalisada)}</span>
+        </div>
+        <div class="status-header">
+            <div class="status-icon ${statusClass}">${getStatusIcon(status)}</div>
+            <div class="status-text">Status: ${escapeHtml(status)}</div>
+        </div>
+        <div class="result-item">
+            <span class="result-label">Score:</span>
+            <span class="result-value">${score}</span>
+        </div>
+        <div class="result-item">
+            <span class="result-label">Feedback:</span>
+            <div class="feedback-list">
+                ${Array.isArray(feedback)
+                    ? feedback.map(item => `<div class="feedback-item">${escapeHtml(item)}</div>`).join('')
+                    : `<div class="feedback-item">${escapeHtml(feedback)}</div>`}
+            </div>
+        </div>
+        <div class="result-item">
+            <span class="result-label">Analisado em:</span>
+            <span class="result-value">${new Date(timestamp).toLocaleString()}</span>
+        </div>
+        <button class="json-toggle" id="toggle-json">Ver JSON bruto</button>
+        <pre class="json-view" id="json-view" style="display:none;">${JSON.stringify(data, null, 2)}</pre>
+    `;
+
+
+    // Botão para expandir JSON
+    const toggleBtn = document.getElementById("toggle-json");
+    const jsonView = document.getElementById("json-view");
+    toggleBtn.addEventListener("click", () => {
+        const isHidden = jsonView.style.display === "none";
+        jsonView.style.display = isHidden ? "block" : "none";
+        toggleBtn.textContent = isHidden ? "Ocultar JSON" : "Ver JSON bruto";
+    });
+}
+
+// Função para gerenciar estado do botão
+function setButtonLoading(loading) {
+    const button = document.getElementById("analyze-btn");
+    if (loading) {
+        button.disabled = true;
+        button.innerHTML = '<span class="loading-spinner"></span> Analisando...';
+    } else {
+        button.disabled = false;
+        button.textContent = "Analisar URL";
     }
 }
 
@@ -57,126 +148,48 @@ document.getElementById("analyze-btn").addEventListener("click", async () => {
     const resultDiv = document.getElementById("resultado");
     const url = urlInput.value.trim();
 
-    //  Validações
+    // Validações
     if (!url) {
         showError(resultSection, resultDiv, "Por favor, insira uma URL.");
         return;
     }
 
-    if (!validarUrl(url)) { 
+    if (!validarUrl(url)) {
         showError(resultSection, resultDiv, "URL inválida. Use o formato: https://exemplo.com");
         return;
     }
 
     const API_URL = "http://127.0.0.1:5000/api/check";
 
-    // ⏳ Ativar loading
     setButtonLoading(true);
-
-    // Limpar resultado anterior
     resultSection.style.display = "none";
-    
 
-    // tratamento de erro para tratar a requisição
     try {
         const response = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url })
+            body: JSON.stringify({ url, timeout: 10 })
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+            throw new Error(data.error || `Erro na requisição: ${response.status}`);
         }
 
-        const data = await response.json();
-        console.log("📦 Resposta da API:", data);
-
-        //  Exibir resultado
         showResult(resultSection, resultDiv, data);
 
     } catch (error) {
         console.error("❌ Erro completo:", error);
-        showError(resultSection, resultDiv, `Não foi possível analisar a URL. Detalhes: ${error.message}`);
+        showError(resultSection, resultDiv, `Não foi possível analisar a URL. Detalhes: ${escapeHtml(error.message)}`);
     } finally {
-       
         setButtonLoading(false);
     }
 });
 
-// Função para mostrar resultados
-function showResult(resultSection, resultDiv, data) {
-    let status, score, feedback;
 
-    // 🧠 Detecta estrutura da resposta (nova ou antiga)
-    if (data.resultado) {
-        status = data.resultado.status || "Desconhecido";
-        score = data.resultado.score ?? "N/A";
-        feedback = data.resultado.feedback || ["Sem detalhes"];
-    } else {
-        score = data.score ?? 0;
-        status = score === 0 ? "Seguro" : score <= 2 ? "Suspeito" : "Perigoso";
-        feedback = data.feedback || ["Sem detalhes"];
-    }
-
-    //  Garante que a classe de status exista
-    const statusClass = getStatusClass(status);
-
-    resultSection.style.display = "block";
-    resultDiv.innerHTML = `
-        <div class="status-header">
-            <div class="status-icon ${statusClass}">${getStatusIcon(status)}</div>
-            <div class="status-text">Status: ${status}</div>
-        </div>
-        <div class="result-item">
-            <span class="result-label">Score:</span>
-            <span class="result-value">${score}</span>
-        </div>
-        <div class="result-item">
-            <span class="result-label">Feedback:</span>
-            <div class="feedback-list">
-                ${Array.isArray(feedback)
-                    ? feedback.map(item => `<div class="feedback-item">${item}</div>`).join('')
-                    : `<div class="feedback-item">${feedback}</div>`}
-            </div>
-        </div>
-        <button class="json-toggle" id="toggle-json">Ver JSON bruto</button>
-        <pre class="json-view" id="json-view" style="display:none;">${JSON.stringify(data, null, 2)}</pre>
-    `;
-
-    //  Botão para expandir JSON
-    const toggleBtn = document.getElementById("toggle-json");
-    const jsonView = document.getElementById("json-view");
-    toggleBtn.addEventListener("click", () => {
-        const isHidden = jsonView.style.display === "none";
-        jsonView.style.display = isHidden ? "block" : "none";
-        toggleBtn.textContent = isHidden ? "Ocultar JSON" : "Ver JSON bruto";
-    });
-}
-
-// Função auxiliar (⚡️necessária)
-function getStatusClass(status) {
-    const s = status.toLowerCase();
-    if (s.includes("seguro")) return "status-seguro";
-    if (s.includes("suspeito")) return "status-suspeito";
-    if (s.includes("perigoso")) return "status-perigoso";
-    return "status-desconhecido";
-}
-
-// Função para mostrar erros
-function showError(resultSection, resultDiv, message) {
-    resultSection.style.display = "block";
-    resultDiv.innerHTML = `
-        <div class="status-header">
-            <div class="status-icon status-perigoso">!</div>
-            <div class="status-text">Erro</div>
-        </div>
-        <p style="color: var(--error-color); margin: 0;">${message}</p>
-    `;
-}
-
-// Enter key support
-document.getElementById("url-input").addEventListener("keypress", function(event) {
+// Suporte à tecla Enter
+document.getElementById("url-input").addEventListener("keypress", function (event) {
     if (event.key === "Enter") {
         document.getElementById("analyze-btn").click();
     }
@@ -186,14 +199,6 @@ document.getElementById("url-input").addEventListener("keypress", function(event
 document.addEventListener("DOMContentLoaded", () => {
     const urlInput = document.getElementById("url-input");
     urlInput.focus();
-
-    // Limpar resultados anteriores
     const resultSection = document.getElementById("result-section");
     resultSection.style.display = "none";
 });
-
-
-
-
-
-
