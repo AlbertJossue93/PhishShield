@@ -14,14 +14,15 @@ class AdvancedURLAnalyzer(URL_Analyzer):
             parsed_url = urlparse(self.url)
             if not parsed_url.hostname:
                 self.feedback.append("❌ Sem hostname para analisar subdomínios")
-                return
+                return  
 
             extracted = tldextract.extract(self.url)
             common_subdomains = [
-                'www', 'mail', 'ftp', 'blog', 'shop', 'store',
+                'www', 'mail', 'ftp', 'blog', 'shop', 'store', 'login', # 'login' adicionado
                 'support', 'ajuda', 'help', 'api', 'cdn', 'dev', 'test',
                 'm', 'mobile', 'app', 'panel', 'painel', 'admin',
-                'secure', 'sso', 'br', 'us', 'uk', 'es', 'fr'
+                'secure', 'sso', 'br', 'us', 'uk', 'es', 'fr', 'staging', 
+                'preprod', 'teste', 'sistema', 'portal' # Adicionei alguns subdomínios comuns de ambiente/sistema
             ]
 
             subdomains = extracted.subdomain.split('.') if extracted.subdomain else []
@@ -35,8 +36,7 @@ class AdvancedURLAnalyzer(URL_Analyzer):
                 self.score += 1
                 self.feedback.append(f"⚠️ Dois subdomínios suspeitos: {', '.join(subdomains_suspeitos)}")
             elif self.subdomain_count == 1:
-                self.score += 1  # Adiciona 1 ao score para consistência
-                self.feedback.append(f"⚠️ Um subdomínio suspeito: {subdomains_suspeitos[0]}")
+                self.feedback.append(f"⚠️ Um subdomínio incomum, mas pode ser nome de plataform: {subdomains_suspeitos[0]}")
             else:
                 if subdomains:
                     self.feedback.append(f"✅ Apenas subdomínios comuns: {', '.join(subdomains)}")

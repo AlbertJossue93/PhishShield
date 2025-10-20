@@ -36,7 +36,7 @@ class URL_Analyzer:
             (re.search(r'//.*//', self.url), "⚠️ Múltiplos '//' (ofuscação)"),
             (re.search(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', netloc), "⚠️ Domínio usa endereço IP"),
             (re.search(r'(?:\%25|%[0-9a-fA-F]{2})', self.url), "⚠️ Codificação suspeita (ex.: %25)"),
-            (any(keyword in self.url.lower() for keyword in ['login', 'secure', 'bank', 'update', 'confirm']), 
+            (any(keyword in self.url.lower() for keyword in ['secure', 'bank', 'update', 'confirm']), 
              "⚠️ Palavras associadas a phishing detectadas")
         ]
         
