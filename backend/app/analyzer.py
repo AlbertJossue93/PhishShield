@@ -49,7 +49,7 @@ class URL_Analyzer:
    
    
     def check_length(self):
-        if len(self.url) > 100:
+        if len(self.url) > 120:
             self.score += 2
             self.feedback.append("URL muito longa")
         elif len(self.url) > 50:
@@ -66,7 +66,7 @@ class URL_Analyzer:
     def get_status(self):
         if self.score == 0:
             return "Seguro"
-        elif self.score <= 2:
+        elif self.score <= 3:
             return "Suspeito" 
         else:
             return "Perigoso"
