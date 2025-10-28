@@ -1,21 +1,90 @@
 from app.sanitizer import sanitize_url, is_long_url
 from urllib.parse import urlparse
 import tldextract
+from difflib import SequenceMatcher
 from app.analyzer import URL_Analyzer
 
 class AdvancedURLAnalyzer(URL_Analyzer):
     def __init__(self, url: str):
+        sanitized = sanitize_url(url, keep_path=True)
+        if not sanitized:
+            raise ValueError("URL inválida")
+        super().__init__(sanitized)
+        self.subdomain_count = 0
+        # Garanta que existam
+        self.score = getattr(self, 'score', 0)
+        self.feedback = getattr(self, 'feedback', [])
+    
         """
         Inicializa o analisador de URLs avançado com uma URL sanitizada.
         
         Args:
             url (str): URL a ser analisada.
         """
-        sanitized_url = sanitize_url(url, keep_path=False)
-        if not sanitized_url:
-            raise ValueError("URL inválida após sanitização")
-        super().__init__(sanitized_url)
-        self.subdomain_count = 0
+        
+
+
+        # Configurações
+        self.known_brands = {
+            'paypal.com', 'google.com', 'gmail.com', 'facebook.com', 'instagram.com',
+            'apple.com', 'microsoft.com', 'amazon.com', 'netflix.com', 'spotify.com',
+            'nubank.com.br', 'itau.com.br', 'bradesco.com.br', 'caixa.gov.br',
+            'bancodobrasil.com.br', 'santander.com.br', 'mercadolivre.com.br'
+        }
+        self.suspicious_tlds = {
+            '.xyz', '.top', '.club', '.online', '.site', '.info', '.work',
+            '.cfd', '.cam', '.rest', '.monster', '.quest', '.bond', '.lat'
+        }
+        self.phishing_keywords = {
+            'login', 'secure', 'verify', 'account', 'update', 'password',
+            'reset', 'auth', 'signin', 'sign-in', 'banking', 'payment',
+            'confirm', 'access', 'session', 'recover', 'support'
+        }
+    def has_homograph(self, domain:str) -> bool:
+        return any(ord(chard) > 127 for chard in  domain)
+    
+
+    def check_typosquatting(self):
+        try:
+            domain =  urlparse(self.url).netloc.lower()
+            if domain.startswith('www.'):
+                domain = domain[4]
+
+
+            for brand in self.known_brands:
+                if SequenceMatcher(None, domain, brand).ratio() > 0.8 and domain != brand:
+                    self.score +=2
+                    self.feedback.append(f"DOMINIO SIMILAR A UNA MARCA CONHECIDA: {brand}")
+                    return
+
+        except: pass
+
+    def check_homograph(self):
+            try:
+                domain = urlparse(self.url).netloc
+                if self.contains_homograph(domain):
+                    self.score += 2
+                    self.feedback.append("DOMÍNIO COM CARACTERES SUSPEITOS")
+            except: pass
+
+    def check_suspicious_tld(self):
+        try:
+            extracted = tldextract.extract(self.url)
+            tld = f".{extracted.suffix.split('.')[-1]}"
+            if tld in self.suspicious_tlds:
+                self.score += 1
+                self.feedback.append(f"TLD suspeito: {tld} (comum em phishing)")
+        except: pass
+
+    def check_phishing_path(self):
+        try:
+            path = urlparse(self.url).path.lower()
+            for keyword in self.phishing_keywords:
+                if keyword in path:
+                    self.score += 1
+                    self.feedback.append(f"Palavra-chave de phishing no caminho: '{keyword}'")
+                    break  # só conta uma vez
+        except: pass
 
     def check_subdomains(self):
         """
@@ -62,42 +131,36 @@ class AdvancedURLAnalyzer(URL_Analyzer):
             self.score += 1
 
     def analyze(self):
-        """
-        Executa a análise completa da URL sanitizada, incluindo verificações da classe base e subdomínios.
+    
+     self.url = sanitize_url(self.url, keep_path=True)
+     if not self.url:
+        self.feedback.append("URL inválida após sanitização")
         
-        Returns:
-            dict: Resultado da análise com status, score, feedback e contagem de subdomínios.
-        """
-        self.url = sanitize_url(self.url, keep_path=False)
-        if not self.url:
-            self.feedback.append("❌ URL inválida após sanitização")
-            return {
-                "resultado": {
-                    "status": "inválido",
-                    "score": self.score,
-                    "feedback": self.feedback,
-                    "subdomain_count": self.subdomain_count
-                },
-                "url_analisada": self.url
-            }
+     super().analyze()
 
-        # Verifica se a URL sanitizada é longa
-        if is_long_url(self.url):
-            self.score += 1
-            self.feedback.append("⚠️ URL muito longa, possivelmente maliciosa")
+     if is_long_url(self.url):
+         self.score += 1
+         self.feedback.append("URL muito longa, possivelmente maliciosa")
 
-        # Chama a análise da classe base
-        super().analyze()
-
-        # Analisa subdomínios
+     else:
+        self.feedback.append("URL de tamanho normal")
         self.check_subdomains()
-
+        self.check_typosquatting()
+        self.check_homograph()
+        self.check_suspicious_tld()
+        self.check_phishing_path()
         return {
             "resultado": {
-                "status": self.get_status(),
-                "score": self.score,
-                "feedback": self.feedback,
-                "subdomain_count": self.subdomain_count
-            },
-            "url_analisada": self.url
+            "status": self.get_status(),
+            "score": self.score,
+            "feedback": self.feedback,
+            "subdomain_count": self.subdomain_count
+        },
+        "url_analisada": self.url
         }
+    
+
+
+   
+
+

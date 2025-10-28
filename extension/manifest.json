@@ -1,6 +1,6 @@
 {
   "name": "Phishield",
-  "description": "Detector de URLs Maliciosas", 
+  "description": "Phishield - Extensão para verificação de URLs maliciosas",
   "version": "1.0",
   "manifest_version": 3,
   "action": {

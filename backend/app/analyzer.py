@@ -66,7 +66,7 @@ class URL_Analyzer:
     def get_status(self):
         if self.score == 0:
             return "Seguro"
-        elif self.score <= 3:
+        elif self.score <= 2:
             return "Suspeito" 
         else:
             return "Perigoso"

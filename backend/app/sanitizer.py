@@ -1,77 +1,64 @@
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, quote
 import re
 
-def sanitize_url(url: str, keep_path: bool = False) -> str:
+def sanitize_url(url: str, keep_path: bool = True, keep_query: bool = True) -> str:
     """
-    Sanitiza uma URL, normalizando o formato, removendo parâmetros desnecessários e, opcionalmente, o caminho.
-    
-    Args:
-        url (str): URL a ser sanitizada.
-        keep_path (bool): Se True, mantém o caminho; se False, remove o caminho (padrão: False).
-        
-    Returns:
-        str: URL sanitizada ou string vazia se inválida.
+    Sanitiza URL mantendo caminho e query, com codificação correta via quote().
     """
     try:
-        # Remove espaços em branco e caracteres de controle
         url = url.strip()
         if not url:
             return ""
 
-        # Adiciona esquema 'https://' se não houver um esquema válido
-        if not re.match(r'^[a-zA-Z]+://', url, re.IGNORECASE):
+        # Adiciona esquema se faltar
+        if not re.match(r'^[a-zA-Z][a-zA-Z0-9+.-]*://', url, re.IGNORECASE):
             url = 'https://' + url
 
-        # Faz o parse da URL
         parsed = urlparse(url)
 
-        # Verifica se o hostname é válido
-        if not parsed.netloc or not re.match(
-            r'^[a-zA-Z0-9][a-zA-Z0-9\-]*(?:\.[a-zA-Z0-9\-]+)+$', 
-            parsed.netloc, 
-            re.IGNORECASE
-        ):
+        # Valida esquema
+        if parsed.scheme not in ['http', 'https']:
             return ""
-        path = parsed.path.rstrip('/') if keep_path else ''
 
-        # Reconstrói a URL sem params, query ou fragment
+        # Valida netloc
+        if not parsed.netloc or not re.match(r'^[a-zA-Z0-9.-]+(:[0-9]+)?$', parsed.netloc):
+            return ""
+
+        # Mantém caminho e query
+        path = parsed.path if keep_path else ''
+        query = parsed.query if keep_query else ''
+
+        # Codifica corretamente com quote()
+        safe_path = quote(path, safe='/:@')  # Permite / : @ no caminho
+        safe_query = quote(query, safe='=&%?')  # Permite & = % ? na query
+
+        # Monta partes
         clean_parts = (
-            parsed.scheme.lower() if parsed.scheme in ['http', 'https'] else 'https',
+            parsed.scheme.lower(),
             parsed.netloc.lower(),
-            path,
-            '',  # params
-            '',  # query
+            safe_path,
+            '',  # params (obsoleto)
+            safe_query,
             ''   # fragment
         )
 
-        # Codifica caracteres especiais e remove caracteres indesejados
-        clean_url = urlunparse(clean_parts)
-        clean_url = re.sub(r'[^\w\-./?=&%:@]', '', clean_url)
+        sanitized = urlunparse(clean_parts)
 
-        # Verifica se a URL resultante é válida
-        if not clean_url or len(clean_url) < 8:  # Mínimo razoável (ex.: https://a.b)
-            return ""
+        # Remove caracteres *realmente* perigosos (ex: < > " ' \)
+        sanitized = re.sub(r'[<> "\'\\]', '', sanitized)
 
-        return clean_url
+        return sanitized if len(sanitized) >= 8 else ""
 
-    except Exception:
+    except Exception as e:
+        print(f"Erro sanitização: {e}")
         return ""
 
 def is_long_url(url: str, limit: int = 200) -> bool:
     """
-    Verifica se a URL sanitizada excede o limite de comprimento, indicando possível malícia.
-    
-    Args:
-        url (str): URL a ser verificada.
-        limit (int): Limite de comprimento (padrão: 200).
-        
-    Returns:
-        bool: True se a URL sanitizada for longa, False caso contrário.
+    Verifica se a URL COMPLETA é longa (inclui caminho e query).
     """
     try:
-        sanitized_url = sanitize_url(url, keep_path=False)
-        if not sanitized_url:
-            return False
-        return len(sanitized_url) > limit or url.count('&') > 5
-    except Exception:
+        full_url = sanitize_url(url, keep_path=True, keep_query=True)
+        return len(full_url) > limit or url.count('&') > 8  
+    except:
         return False

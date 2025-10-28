@@ -1,58 +1,54 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PhiShield - Detector de Phishing</title>
-    <link rel="stylesheet" href="popup.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PhiShield - Detector de Phishing</title>
+  <link rel="stylesheet" href="popup.css" />
 </head>
-
 <body>
-    <div class="container">
-        <!-- Cabeçalho com Nome da extensão -->
-        <header class="header">
-            <div class="header-content">
-                <img src="icons/dragon.png" alt="Logo PhiShield" class="logo-bagde">  
-            </div>
-            <button class="theme-toggle" id="theme-toggle">
-                <svg class="icon moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>
-                </svg>
-                <svg class="icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="4"/>
-                    <path d="M12 2v2"/>
-                    <path d="M12 20v2"/>
-                    <path d="m4.93 4.93 1.41 1.41"/>
-                    <path d="m17.66 17.66 1.41 1.41"/>
-                    <path d="M2 12h2"/>
-                    <path d="M20 12h2"/>
-                    <path d="m6.34 17.66-1.41 1.41"/>
-                    <path d="m19.07 4.93-1.41 1.41"/>
-                </svg>
-            </button>
-        </header>
-        
-        <main class="main">
-            <div class="input-group">
-                <label for="url-input" class="label">Digite a URL para Análise:</label>
-                <input type="text" id="url-input" class="input" placeholder="Ex: https://www.google.com">
-                <button id="analyze-btn" class="button">
-                    <span class="button-text">Analisar URL</span>
-                </button>
-            </div>
-        </main>
+  <div class="container">
+    <!-- Cabeçalho -->
+    <header class="header">
+      <div class="header-content">
+        <img src="icons/dragon.png" alt="Logo PhiShield" class="logo-bagde">
+        <h1>PhiShield</h1>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Alternar tema">
+        <svg class="icon moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>
+        </svg>
+        <svg class="icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2 M12 20v2 m-7.07-15.07 1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2 m-15.07 7.07-1.41 1.41 M19.07 4.93l-1.41 1.41"/>
+        </svg>
+      </button>
+    </header>
 
-        <!-- Área onde o resultado será mostrado -->
-        <section id="result-section" class="result" style="display: none;">
-            <h2>Resultado da Análise</h2>
-            <div id="resultado" class="resultado"></div>
-        </section>
+    <!-- Input -->
+    <main class="main">
+      <div class="input-group">
+        <label for="url-input" class="label">Digite a URL para análise:</label>
+        <input type="text" id="url-input" class="input" placeholder="Ex: https://paypa1.com/login" />
+        <button id="analyze-btn" class="button">
+          <span class="button-text">Analisar URL</span>
+        </button>
+      </div>
+    </main>
 
-        <footer class="footer">
-            <p>Powered by Python & Flask</p>
-        </footer>
+    <footer class="footer">
+      <p>Powered by Python & Flask</p>
+    </footer>
+  </div>
+
+  <!-- Modal -->
+  <div id="resultModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">×</span>
+      <div id="modalBody" class="modal-body"></div>
     </div>
+  </div>
 
-    <script src="popup.js"></script>
+  <script src="popup.js"></script>
 </body>
 </html>
