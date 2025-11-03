@@ -55,16 +55,16 @@ function setButtonLoading(loading) {
     }
 }
 
-const modal = document.getElementById("resultModal");
-const modalBody = document.getElementById("modalBody");
-const closeModal = document.getElementById("closeModal");
-
 document.getElementById("analyze-btn").addEventListener("click", analyze);
 document.getElementById("url-input").addEventListener("keypress", e => {
     if (e.key === "Enter") analyze();
 });
 
 async function analyze() {
+const modal = document.getElementById("resultModal");
+const modalBody = document.getElementById("modalBody");
+const closeModal = document.getElementById("closeModal");
+
     const url = document.getElementById("url-input").value.trim();
     if (!url) return showError("Por favor, insira uma URL.");
     if (!validarUrl(url)) return showError("URL inválida. Use https://exemplo.com");
@@ -146,10 +146,17 @@ function showError(message) {
         <p style="color: var(--error-color); margin: 16px 0; text-align: center;">${escapeHtml(message)}</p>
     `;
 }
+// ====== 3. Eventos globais (fora de analyze) ======
+const closeModal = document.getElementById("closeModal");
+const modal = document.getElementById("resultModal");
 
-closeModal.addEventListener("click", () => modal.style.display = "none");
-window.addEventListener("click", e => { if (e.target === modal) modal.style.display = "none"; });
+if (closeModal && modal) {
+    closeModal.addEventListener("click", () => {
+        modal.style.display = "none";
+    });
+}
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("url-input").focus();
+    const urlInput = document.getElementById("url-input");
+    if (urlInput) urlInput.focus();
 });
