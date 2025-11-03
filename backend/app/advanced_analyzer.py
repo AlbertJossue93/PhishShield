@@ -14,16 +14,7 @@ class AdvancedURLAnalyzer(URL_Analyzer):
         # Garanta que existam
         self.score = getattr(self, 'score', 0)
         self.feedback = getattr(self, 'feedback', [])
-    
-        """
-        Inicializa o analisador de URLs avançado com uma URL sanitizada.
-        
-        Args:
-            url (str): URL a ser analisada.
-        """
-        
-
-
+ 
         # Configurações
         self.known_brands = {
             'paypal.com', 'google.com', 'gmail.com', 'facebook.com', 'instagram.com',
@@ -87,10 +78,7 @@ class AdvancedURLAnalyzer(URL_Analyzer):
         except: pass
 
     def check_subdomains(self):
-        """
-        Verifica subdomínios suspeitos usando tldextract.
-        Atualiza o score e feedback com base na análise.
-        """
+      
         try:
             parsed_url = urlparse(self.url)
             if not parsed_url.hostname:
