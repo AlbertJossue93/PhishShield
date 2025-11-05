@@ -1,4 +1,4 @@
-// popup.js - SEU CÓDIGO + MODAL
+// configurações do tema
 document.getElementById('theme-toggle').addEventListener('click', () => {
     const html = document.documentElement;
     const current = html.getAttribute('data-theme');
@@ -11,14 +11,14 @@ chrome.storage.local.get(['theme'], (result) => {
     const theme = result.theme || 'light';
     document.documentElement.setAttribute('data-theme', theme);
 });
-
+// validação da url
 function validarUrl(url) {
     try {
         new URL(url);
         return /^https?:\/\//i.test(url);
     } catch { return false; }
 }
-
+// escape html contra ataque xss
 function escapeHtml(unsafe) {
     return unsafe
         .replace(/&/g, "&amp;")
@@ -70,7 +70,7 @@ const closeModal = document.getElementById("closeModal");
     if (!validarUrl(url)) return showError("URL inválida. Use https://exemplo.com");
 
     modal.style.display = "flex";
-    modalBody.innerHTML = `<p style="text-align:center; padding:20px;">Analisando com PhishTank API...</p>`;
+    modalBody.innerHTML = `<p style="text-align:center; padding:20px;">Analisando...</p>`;
 
     const API_URL = "http://127.0.0.1:5000/api/check";
     setButtonLoading(true);
@@ -135,7 +135,7 @@ function renderResult(data) {
         btn.textContent = view.style.display === "block" ? "Ocultar JSON" : "Ver JSON bruto";
     });
 }
-
+// mostra o erro na modal 
 function showError(message) {
     modal.style.display = "flex";
     modalBody.innerHTML = `
@@ -146,7 +146,7 @@ function showError(message) {
         <p style="color: var(--error-color); margin: 16px 0; text-align: center;">${escapeHtml(message)}</p>
     `;
 }
-// ====== 3. Eventos globais (fora de analyze) ======
+
 const closeModal = document.getElementById("closeModal");
 const modal = document.getElementById("resultModal");
 
