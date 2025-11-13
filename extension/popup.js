@@ -115,11 +115,7 @@ function renderResult(data) {
             <div class="status-text">Status: ${escapeHtml(status)}</div>
         </div>
         <div class="result-item">
-            <span class="result-label">Score:</span>
-            <span class="result-value">${score}</span>
-        </div>
-        <div class="result-item">
-            <span class="result-label">Feedback:</span>
+            <span class="result-label">Resultados:</span>
             <div class="feedback-list">
                 ${feedback.map(item => `<div class="feedback-item">${escapeHtml(item)}</div>`).join('')}
             </div>

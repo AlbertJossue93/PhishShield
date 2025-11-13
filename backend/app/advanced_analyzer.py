@@ -107,7 +107,7 @@ class AdvancedURLAnalyzer(URL_Analyzer):
                 self.score += 1
                 self.feedback.append(f"⚠️ Dois subdomínios suspeitos: {', '.join(subdomains_suspeitos)}")
             elif self.subdomain_count == 1:
-                self.feedback.append(f"⚠️ Um subdomínio incomum, mas pode ser nome de plataforma: {subdomains_suspeitos[0]}")
+                self.feedback.append(f"⚠️ Um subdomínio incomum: {subdomains_suspeitos[0]}")
             else:
                 if subdomains:
                     self.feedback.append(f"✅ Apenas subdomínios comuns: {', '.join(subdomains)}")
@@ -131,7 +131,6 @@ class AdvancedURLAnalyzer(URL_Analyzer):
          self.feedback.append("URL muito longa, possivelmente maliciosa")
 
      else:
-        self.feedback.append("URL de tamanho normal")
         self.check_subdomains()
         self.check_typosquatting()
         self.check_homograph()

@@ -15,12 +15,9 @@ def sanitize_url(url: str, keep_path: bool = True, keep_query: bool = True) -> s
             url = 'https://' + url
 
         parsed = urlparse(url)
-
-        # Valida esquema
         if parsed.scheme not in ['http', 'https']:
             return ""
 
-        # Valida netloc
         if not parsed.netloc or not re.match(r'^[a-zA-Z0-9.-]+(:[0-9]+)?$', parsed.netloc):
             return ""
 
