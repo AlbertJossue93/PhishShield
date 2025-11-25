@@ -141,7 +141,10 @@ class AdvancedURLAnalyzer(URL_Analyzer):
             "status": self.get_status(),
             "score": self.score,
             "feedback": self.feedback,
-            "subdomain_count": self.subdomain_count
+            "subdominios": self.subdomain_count,
+            "homografos": self.check_homograph(),
+            "Topo de domínio suspeito":self.check_suspicious_tld(),
+            "typosquatting": self.check_typosquatting()
         },
         "url_analisada": self.url
         }

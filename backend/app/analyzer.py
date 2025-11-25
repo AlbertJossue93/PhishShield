@@ -76,6 +76,7 @@ class URL_Analyzer:
         self.check_length()
         self.check_hifen()
         
+        
 
 
         # Estrutura compatível com o popup.js
