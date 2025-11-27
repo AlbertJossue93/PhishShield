@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from app.advanced_analyzer import AdvancedURLAnalyzer  # Importa a classe correta
+from app.advanced_analyzer import AdvancedURLAnalyzer
+from app.sanitizer import sanitize_url  
 
 bp = Blueprint("routes", __name__)
 
@@ -15,12 +16,17 @@ def check():
         if not url:
             return jsonify({"error": "URL é obrigatória"}), 400
 
-        # Timeout mantido para compatibilidade futura
+        #Sanitização backend – usando sua função existente
+        sanitized_url = sanitize_url(url)
+        if not sanitized_url:
+            return jsonify({"error": "URL contém caracteres inválidos"}), 400
+
         timeout = data.get("timeout", 10)
         if not isinstance(timeout, (int, float)) or timeout <= 0:
             return jsonify({"error": "Timeout deve ser um número positivo"}), 400
 
-        analyzer = AdvancedURLAnalyzer(url)  # Usa AdvancedURLAnalyzer
+        # Usa a URL já sanitizada
+        analyzer = AdvancedURLAnalyzer(sanitized_url)
         resultado = analyzer.analyze()
 
         return jsonify({

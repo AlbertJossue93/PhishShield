@@ -1,4 +1,7 @@
-// configurações do tema
+// =========================
+// CONFIGURAÇÃO DE TEMA
+// =========================
+
 document.getElementById('theme-toggle').addEventListener('click', () => {
     const html = document.documentElement;
     const current = html.getAttribute('data-theme');
@@ -11,14 +14,35 @@ chrome.storage.local.get(['theme'], (result) => {
     const theme = result.theme || 'light';
     document.documentElement.setAttribute('data-theme', theme);
 });
-// validação da url
+
+// =========================
+// ELEMENTOS GLOBAIS
+// =========================
+
+const modal = document.getElementById("resultModal");
+const modalBody = document.getElementById("modalBody");
+const closeModal = document.getElementById("closeModal");
+
+
+
 function validarUrl(url) {
     try {
         new URL(url);
         return /^https?:\/\//i.test(url);
-    } catch { return false; }
+    } catch {
+        return false;
+    }
 }
-// escape html contra ataque xss
+
+function sanitizeURL(input) {
+    if (typeof input !== "string") return "";
+    return input
+        .replace(/<.*?>/g, "")        // remove tags HTML
+        .replace(/javascript:/gi, "") // remove esquema perigoso
+        .replace(/data:/gi, "")       // remove data URLs
+        .trim();
+}
+
 function escapeHtml(unsafe) {
     return unsafe
         .replace(/&/g, "&amp;")
@@ -27,6 +51,7 @@ function escapeHtml(unsafe) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
 
 function getStatusIcon(status) {
     const s = status.toLowerCase();
@@ -55,17 +80,16 @@ function setButtonLoading(loading) {
     }
 }
 
+
 document.getElementById("analyze-btn").addEventListener("click", analyze);
-document.getElementById("url-input").addEventListener("keypress", e => {
+document.getElementById("url-input").addEventListener("keypress", (e) => {
     if (e.key === "Enter") analyze();
 });
 
 async function analyze() {
-const modal = document.getElementById("resultModal");
-const modalBody = document.getElementById("modalBody");
-const closeModal = document.getElementById("closeModal");
+    const urlRaw = document.getElementById("url-input").value.trim();
+    const url = sanitizeURL(urlRaw);
 
-    const url = document.getElementById("url-input").value.trim();
     if (!url) return showError("Por favor, insira uma URL.");
     if (!validarUrl(url)) return showError("URL inválida. Use https://exemplo.com");
 
@@ -93,15 +117,15 @@ const closeModal = document.getElementById("closeModal");
     }
 }
 
-function renderResult(data) {
-    let status = "Desconhecido", score = "N/A", feedback = ["Sem detalhes"], urlAnalisada = "N/A";
+// =========================
+// RENDERIZAÇÃO DOS RESULTADOS
+// =========================
 
-    if (data.resultado) {
-        status = data.resultado.status || status;
-        score = data.resultado.score ?? score;
-        feedback = data.resultado.feedback || feedback;
-        urlAnalisada = data.url_analisada || urlAnalisada;
-    }
+function renderResult(data) {
+    let status = data?.resultado?.status || "Desconhecido";
+    let score = data?.resultado?.score ?? "N/A";
+    let feedback = data?.resultado?.feedback || ["Sem detalhes"];
+    let urlAnalisada = data?.url_analisada || "N/A";
 
     const statusClass = getStatusClass(status);
 
@@ -110,16 +134,21 @@ function renderResult(data) {
             <span class="result-label">URL Analisada:</span>
             <span class="result-value">${escapeHtml(urlAnalisada)}</span>
         </div>
+
         <div class="status-header">
             <div class="status-icon ${statusClass}">${getStatusIcon(status)}</div>
             <div class="status-text">Status: ${escapeHtml(status)}</div>
         </div>
+
         <div class="result-item">
             <span class="result-label">Resultados:</span>
             <div class="feedback-list">
-                ${feedback.map(item => `<div class="feedback-item">${escapeHtml(item)}</div>`).join('')}
+                ${feedback.map(item => `
+                    <div class="feedback-item">${escapeHtml(item)}</div>
+                `).join('')}
             </div>
         </div>
+
         <button class="json-toggle" id="toggle-json">Ver JSON bruto</button>
         <pre class="json-view" id="json-view" style="display:none;">${JSON.stringify(data, null, 2)}</pre>
     `;
@@ -127,11 +156,15 @@ function renderResult(data) {
     document.getElementById("toggle-json").addEventListener("click", () => {
         const view = document.getElementById("json-view");
         const btn = document.getElementById("toggle-json");
-        view.style.display = view.style.display === "none" ? "block" : "none";
-        btn.textContent = view.style.display === "block" ? "Ocultar JSON" : "Ver JSON bruto";
+
+        const isOpen = view.style.display === "block";
+        view.style.display = isOpen ? "none" : "block";
+        btn.textContent = isOpen ? "Ver JSON bruto" : "Ocultar JSON";
     });
 }
-// mostra o erro na modal 
+
+
+
 function showError(message) {
     modal.style.display = "flex";
     modalBody.innerHTML = `
@@ -139,12 +172,15 @@ function showError(message) {
             <div class="status-icon status-perigoso">!</div>
             <div class="status-text">Erro</div>
         </div>
-        <p style="color: var(--error-color); margin: 16px 0; text-align: center;">${escapeHtml(message)}</p>
+        <p style="color: var(--error-color); margin: 16px 0; text-align: center;">
+            ${escapeHtml(message)}
+        </p>
     `;
 }
 
-const closeModal = document.getElementById("closeModal");
-const modal = document.getElementById("resultModal");
+// =========================
+// FECHAR MODAL
+// =========================
 
 if (closeModal && modal) {
     closeModal.addEventListener("click", () => {

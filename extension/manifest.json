@@ -3,6 +3,7 @@
   "description": "Phishield - Extensão para verificação de URLs maliciosas",
   "version": "1.0",
   "manifest_version": 3,
+  
   "action": {
     "default_popup": "popup.html",
     "default_title": "Verificar URL com Phishield",
