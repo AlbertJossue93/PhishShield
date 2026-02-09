@@ -39,7 +39,7 @@ class AdvancedURLAnalyzer(URL_Analyzer):
         try:
             domain =  urlparse(self.url).netloc.lower()
             if domain.startswith('www.'):
-                domain = domain[4]
+                domain = domain[4:]
 
 
             for brand in self.known_brands:
@@ -53,7 +53,7 @@ class AdvancedURLAnalyzer(URL_Analyzer):
     def check_homograph(self):
             try:
                 domain = urlparse(self.url).netloc
-                if self.contains_homograph(domain):
+                if self.has_homograph(domain):
                     self.score += 2
                     self.feedback.append("DOMÍNIO COM CARACTERES SUSPEITOS")
             except: pass
@@ -78,7 +78,6 @@ class AdvancedURLAnalyzer(URL_Analyzer):
         except: pass
 
     def check_subdomains(self):
-      
         try:
             parsed_url = urlparse(self.url)
             if not parsed_url.hostname:
@@ -119,36 +118,49 @@ class AdvancedURLAnalyzer(URL_Analyzer):
             self.score += 1
 
     def analyze(self):
-    
-     self.url = sanitize_url(self.url, keep_path=True)
-     if not self.url:
-        self.feedback.append("URL inválida após sanitização")
-        
-     super().analyze()
+        """
+        Executa a análise avançada de URL, aproveitando as regras básicas da classe
+        base (`URL_Analyzer`) e adicionando checagens extras de phishing.
+        """
+        # Sanitiza novamente por segurança (caso a instância seja reutilizada)
+        self.url = sanitize_url(self.url, keep_path=True)
+        if not self.url:
+            self.score += 1
+            self.feedback.append("URL inválida após sanitização")
+            return {
+                "resultado": {
+                    "status": self.get_status(),
+                    "score": self.score,
+                    "feedback": self.feedback,
+                    "subdominios": self.subdomain_count,
+                },
+                "url_analisada": "",
+            }
 
-     if is_long_url(self.url):
-         self.score += 1
-         self.feedback.append("URL muito longa, possivelmente maliciosa")
+        # Regras básicas (HTTPS, tamanho, hífen, etc.)
+        super().analyze()
 
-     else:
-        self.check_subdomains()
-        self.check_typosquatting()
-        self.check_homograph()
-        self.check_suspicious_tld()
-        self.check_phishing_path()
+        # Regras avançadas
+        if is_long_url(self.url):
+            self.score += 1
+            self.feedback.append("URL muito longa, possivelmente maliciosa")
+        else:
+            self.check_subdomains()
+            self.check_typosquatting()
+            self.check_homograph()
+            self.check_suspicious_tld()
+            self.check_phishing_path()
+
         return {
             "resultado": {
-            "status": self.get_status(),
-            "score": self.score,
-            "feedback": self.feedback,
-            "subdominios": self.subdomain_count,
-            "homografos": self.check_homograph(),
-            "Topo de domínio suspeito":self.check_suspicious_tld(),
-            "typosquatting": self.check_typosquatting()
-        },
-        "url_analisada": self.url
+                "status": self.get_status(),
+                "score": self.score,
+                "feedback": self.feedback,
+                "subdominios": self.subdomain_count,
+            },
+            "url_analisada": self.url,
         }
-    
+
 
 
    

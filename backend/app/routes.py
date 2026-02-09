@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime
 from app.advanced_analyzer import AdvancedURLAnalyzer
 from app.sanitizer import sanitize_url  
@@ -35,4 +35,6 @@ def check():
         })
 
     except Exception as e:
-        return jsonify({"error": f"Falha ao analisar a URL: {str(e)}"}), 500
+        # Loga o erro no servidor e retorna uma mensagem genérica para o cliente
+        current_app.logger.exception("Erro ao analisar a URL")
+        return jsonify({"error": "Falha ao analisar a URL"}), 500

@@ -1,5 +1,8 @@
 from urllib.parse import urlparse, urlunparse, quote
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 def sanitize_url(url: str, keep_path: bool = True, keep_query: bool = True) -> str:
     """
@@ -47,7 +50,7 @@ def sanitize_url(url: str, keep_path: bool = True, keep_query: bool = True) -> s
         return sanitized if len(sanitized) >= 8 else ""
 
     except Exception as e:
-        print(f"Erro sanitização: {e}")
+        logger.error(f"Erro na sanitização de URL: {e}", exc_info=True)
         return ""
 
 def is_long_url(url: str, limit: int = 200) -> bool:
@@ -56,6 +59,7 @@ def is_long_url(url: str, limit: int = 200) -> bool:
     """
     try:
         full_url = sanitize_url(url, keep_path=True, keep_query=True)
-        return len(full_url) > limit or url.count('&') > 8  
-    except:
+        return len(full_url) > limit or url.count("&") > 8
+    except Exception as e:
+        logger.error(f"Erro ao verificar comprimento da URL: {e}", exc_info=True)
         return False

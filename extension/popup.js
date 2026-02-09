@@ -85,7 +85,7 @@ document.getElementById("analyze-btn").addEventListener("click", analyze);
 document.getElementById("url-input").addEventListener("keypress", (e) => {
     if (e.key === "Enter") analyze();
 });
-
+// ocorrre a requsição da api
 async function analyze() {
     const urlRaw = document.getElementById("url-input").value.trim();
     const url = sanitizeURL(urlRaw);
